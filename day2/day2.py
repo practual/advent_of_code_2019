@@ -1,36 +1,24 @@
-#! /usr/bin/env python
+# `python -m day2.day2 ./day2/input`
 
-import math
 import sys
 
-def run_program(values, noun, verb):
-    program = list(values)
-    program[1] = noun
-    program[2] = verb
-    ptr = 0
-    while True:
-        opcode = program[ptr]
-        if opcode == 99:
-            return program[0]
-        input1_ptr = program[ptr + 1]
-        input1_val = program[input1_ptr]
-        input2_ptr = program[ptr + 2]
-        input2_val = program[input2_ptr]
-        output_ptr = program[ptr + 3]
-        if opcode == 1:
-            output_val = input1_val + input2_val
-        else:
-            output_val = input1_val * input2_val
-        program[output_ptr] = output_val
-        ptr = ptr + 4 
+from intcode.computer import run_program
+
 
 def main():
     with open(sys.argv[1]) as fp:
-        program = tuple(map(lambda x: int(x.strip()), fp.readline().split(',')))
+        orig_program = tuple(map(lambda x: int(x.strip()), fp.readline().split(',')))
+    program = list(orig_program)
+    program[1] = 12
+    program[2] = 2
+    print(run_program(program)[0])
     noun = 0
     verb = 0
     while True:
-        program_output = run_program(program, noun, verb)
+        program = list(orig_program)
+        program[1] = noun
+        program[2] = verb
+        program_output = run_program(program)[0]
         if program_output == 19690720:
             print(100 * noun + verb)
             break
@@ -40,6 +28,7 @@ def main():
             noun += 1
         if noun == 100:
             break
+
 
 if __name__ == '__main__':
     main()
