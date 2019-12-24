@@ -17,13 +17,17 @@ def multiply(program, *args):
     program[output_ptr] = output_val
 
 
-def read_input(program, *args):
-    input_val = int(input("INPUT:"))
-    program[args[0][0]] = input_val
+def read_input(program, single_input, *args):
+    if single_input is not None:
+        input_val = single_input
+    else:
+        input_val = input("INPUT:")
+    program[args[0][0]] = int(input_val)
 
 
 def output(program, *args):
     print(program[args[0][0]])
+    return program[args[0][0]]
 
 
 def jump_if_true(program, *args):
@@ -86,19 +90,30 @@ def process_opcode(raw_opcode):
     return opcode, modes
 
 
-def run_program(program):
-    ptr = 0
+def run_program(program, inputs=None, return_output=False, raise_halt=False, ptr=0):
     try:
         while True:
             opcode, modes = process_opcode(program[ptr])
             num_params, instruction = OPCODES[opcode]
-            new_ptr = instruction(
-                program,
-                *zip_longest(program[ptr + 1:ptr + num_params + 1], modes, fillvalue=0)
+            params_with_modes = zip_longest(
+                program[ptr + 1:ptr + num_params + 1], modes, fillvalue=0
             )
-            if new_ptr is not None:
+            if opcode == 3:
+                # Special handler for taking passed inputs from a variable rather than stdin.
+                single_input = inputs.pop() if inputs else None
+                new_ptr = instruction(program, single_input, *params_with_modes)
+            else:
+                new_ptr = instruction(
+                    program,
+                    *params_with_modes
+                )
+            if opcode != 4 and new_ptr is not None:
                 ptr = new_ptr
             else:
                 ptr = ptr + num_params + 1
+            if opcode == 4 and return_output:
+                return ptr, new_ptr
     except StopIteration:
-        return program
+        if raise_halt:
+            raise
+        return ptr

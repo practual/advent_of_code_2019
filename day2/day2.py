@@ -11,15 +11,16 @@ def main():
     program = list(orig_program)
     program[1] = 12
     program[2] = 2
-    print(run_program(program)[0])
+    run_program(program)
+    print(program[0])
     noun = 0
     verb = 0
     while True:
         program = list(orig_program)
         program[1] = noun
         program[2] = verb
-        program_output = run_program(program)[0]
-        if program_output == 19690720:
+        run_program(program)
+        if program[0] == 19690720:
             print(100 * noun + verb)
             break
         verb += 1
