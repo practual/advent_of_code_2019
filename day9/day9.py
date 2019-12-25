@@ -1,4 +1,4 @@
-# `python -m day5.day5 ./day5/input`
+# `python -m day9.day9 ./day9/input`
 
 import sys
 

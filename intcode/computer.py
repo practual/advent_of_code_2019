@@ -1,63 +1,66 @@
 from itertools import zip_longest
 
 
-def add(program, *args):
-    input1 = get_input(program, *args[0])
-    input2 = get_input(program, *args[1])
+def add(program, param0, param1, param2, context):
+    input1 = read_value(program, *param0, context)
+    input2 = read_value(program, *param1, context)
     output_val = input1 + input2
-    output_ptr = args[2][0]
-    program[output_ptr] = output_val
+    write_value(program, *param2, output_val, context)
 
 
-def multiply(program, *args):
-    input1 = get_input(program, *args[0])
-    input2 = get_input(program, *args[1])
+def multiply(program, param0, param1, param2, context):
+    input1 = read_value(program, *param0, context)
+    input2 = read_value(program, *param1, context)
     output_val = input1 * input2
-    output_ptr = args[2][0]
-    program[output_ptr] = output_val
+    write_value(program, *param2, output_val, context)
 
 
-def read_input(program, single_input, *args):
-    if single_input is not None:
-        input_val = single_input
-    else:
+def read_input(program, param0, context):
+    try:
+        input_val = context['inputs'].pop()
+    except IndexError:
         input_val = input("INPUT:")
-    program[args[0][0]] = int(input_val)
+    write_value(program, *param0, int(input_val), context)
 
 
-def output(program, *args):
-    print(program[args[0][0]])
-    return program[args[0][0]]
+def output(program, param0, context):
+    output_val = read_value(program, *param0, context)
+    print(output_val)
+    context['output'] = output_val
 
 
-def jump_if_true(program, *args):
-    input1 = get_input(program, *args[0])
-    input2 = get_input(program, *args[1])
+def jump_if_true(program, param0, param1, context):
+    input1 = read_value(program, *param0, context)
+    input2 = read_value(program, *param1, context)
     if input1:
-        return input2
+        context['ptr'] = input2
 
 
-def jump_if_false(program, *args):
-    input1 = get_input(program, *args[0])
-    input2 = get_input(program, *args[1])
+def jump_if_false(program, param0, param1, context):
+    input1 = read_value(program, *param0, context)
+    input2 = read_value(program, *param1, context)
     if not input1:
-        return input2
+        context['ptr'] = input2
 
 
-def less_than(program, *args):
-    input1 = get_input(program, *args[0])
-    input2 = get_input(program, *args[1])
-    output_ptr = args[2][0]
+def less_than(program, param0, param1, param2, context):
+    input1 = read_value(program, *param0, context)
+    input2 = read_value(program, *param1, context)
+    output_ptr = param2[0]
     output_val = int(input1 < input2)
-    program[output_ptr] = output_val
+    write_value(program, *param2, output_val, context)
 
 
-def equals(program, *args):
-    input1 = get_input(program, *args[0])
-    input2 = get_input(program, *args[1])
-    output_ptr = args[2][0]
+def equals(program, param0, param1, param2, context):
+    input1 = read_value(program, *param0, context)
+    input2 = read_value(program, *param1, context)
     output_val = int(input1 == input2)
-    program[output_ptr] = output_val
+    write_value(program, *param2, output_val, context)
+
+
+def update_base(program, param0, context):
+    input1 = read_value(program, *param0, context)
+    context['base'] += input1
 
 
 def halt(program, *args):
@@ -73,14 +76,28 @@ OPCODES = {
     6: (2, jump_if_false),
     7: (3, less_than),
     8: (3, equals),
+    9: (1, update_base),
     99: (0, halt),
 }
 
 
-def get_input(program, param, mode):
+def read_value(program, param, mode, context):
     if mode == 0:
         return program[param]
-    return param
+    elif mode == 1:
+        return param
+    elif mode == 2:
+        return program[param + context['base']]
+    raise ValueError
+
+
+def write_value(program, address, mode, value, context):
+    if mode == 0:
+        program[address] = value
+    elif mode == 2:
+        program[address + context['base']] = value
+    else:
+        raise ValueError
 
 
 def process_opcode(raw_opcode):
@@ -91,29 +108,28 @@ def process_opcode(raw_opcode):
 
 
 def run_program(program, inputs=None, return_output=False, raise_halt=False, ptr=0):
+    context = {
+        'base': 0,
+        'inputs': inputs or [],
+        'output': None,
+    }
     try:
         while True:
             opcode, modes = process_opcode(program[ptr])
             num_params, instruction = OPCODES[opcode]
             params_with_modes = zip_longest(
-                program[ptr + 1:ptr + num_params + 1], modes, fillvalue=0
+                [program[p] for p in range(ptr + 1, ptr + num_params + 1)], modes, fillvalue=0
             )
-            if opcode == 3:
-                # Special handler for taking passed inputs from a variable rather than stdin.
-                single_input = inputs.pop() if inputs else None
-                new_ptr = instruction(program, single_input, *params_with_modes)
-            else:
-                new_ptr = instruction(
-                    program,
-                    *params_with_modes
-                )
-            if opcode != 4 and new_ptr is not None:
-                ptr = new_ptr
-            else:
-                ptr = ptr + num_params + 1
-            if opcode == 4 and return_output:
-                return ptr, new_ptr
+            context['ptr'] = ptr + num_params + 1
+            instruction(program, *params_with_modes, context)
+            ptr = context['ptr']
+            if context['output'] is not None and return_output:
+                return ptr, context['output']
     except StopIteration:
         if raise_halt:
             raise
         return ptr
+
+
+def list_to_program(program_list):
+    return {ptr: instruction for ptr, instruction in enumerate(program_list)}

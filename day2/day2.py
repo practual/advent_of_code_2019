@@ -2,7 +2,7 @@
 
 import sys
 
-from intcode.computer import run_program
+from intcode.computer import list_to_program, run_program
 
 
 def main():
@@ -16,7 +16,7 @@ def main():
     noun = 0
     verb = 0
     while True:
-        program = list(orig_program)
+        program = list_to_program(orig_program)
         program[1] = noun
         program[2] = verb
         run_program(program)

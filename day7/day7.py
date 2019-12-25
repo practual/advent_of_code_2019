@@ -3,7 +3,7 @@
 import sys
 from itertools import permutations
 
-from intcode.computer import run_program
+from intcode.computer import list_to_program, run_program
 
 
 def main():
@@ -13,7 +13,7 @@ def main():
     for phases in permutations('01234', 5):
         current_input = 0
         for phase in phases:
-            program = list(orig_program)
+            program = list_to_program(orig_program)
             _, current_input = run_program(program, [current_input, phase], True)
         max_output = max(max_output, current_input)
     print('PART 1 MAX OUTPUT', max_output)
@@ -29,7 +29,7 @@ def main():
                 try:
                     program, ptr = amp_states[current_amp]
                 except IndexError:
-                    program = list(orig_program)
+                    program = list_to_program(orig_program)
                     ptr = 0
                     amp_states.append((program, ptr))
                     inputs.append(phase)
