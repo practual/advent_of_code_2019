@@ -20,7 +20,11 @@ def read_input(program, param0, context):
     try:
         input_val = context['inputs'].pop()
     except IndexError:
-        input_val = input("INPUT:")
+        input_callback = context.get('input_callback')
+        if input_callback:
+            input_val = input_callback()
+        else:
+            input_val = input("INPUT:")
     write_value(program, *param0, int(input_val), context)
 
 
