@@ -1,3 +1,4 @@
+from collections import defaultdict
 from itertools import zip_longest
 
 
@@ -25,7 +26,6 @@ def read_input(program, param0, context):
 
 def output(program, param0, context):
     output_val = read_value(program, *param0, context)
-    print(output_val)
     context['output'] = output_val
 
 
@@ -46,7 +46,6 @@ def jump_if_false(program, param0, param1, context):
 def less_than(program, param0, param1, param2, context):
     input1 = read_value(program, *param0, context)
     input2 = read_value(program, *param1, context)
-    output_ptr = param2[0]
     output_val = int(input1 < input2)
     write_value(program, *param2, output_val, context)
 
@@ -107,14 +106,18 @@ def process_opcode(raw_opcode):
     return opcode, modes
 
 
-def run_program(program, inputs=None, return_output=False, raise_halt=False, ptr=0):
-    context = {
+def run_program(program, context=None, return_output=False, raise_halt=False):
+    _context = {
+        'ptr': 0,
         'base': 0,
-        'inputs': inputs or [],
+        'inputs': [],
         'output': None,
     }
+    _context.update(context or {})
+    context = _context
     try:
         while True:
+            ptr = context['ptr']
             opcode, modes = process_opcode(program[ptr])
             num_params, instruction = OPCODES[opcode]
             params_with_modes = zip_longest(
@@ -122,14 +125,18 @@ def run_program(program, inputs=None, return_output=False, raise_halt=False, ptr
             )
             context['ptr'] = ptr + num_params + 1
             instruction(program, *params_with_modes, context)
-            ptr = context['ptr']
-            if context['output'] is not None and return_output:
-                return ptr, context['output']
+            if context['output'] is not None:
+                output_val = context['output']
+                context['output'] = None
+                if return_output:
+                    return context, output_val
+                else:
+                    print(output_val)
     except StopIteration:
         if raise_halt:
             raise
-        return ptr
+        return context
 
 
 def list_to_program(program_list):
-    return {ptr: instruction for ptr, instruction in enumerate(program_list)}
+    return defaultdict(int, {ptr: instruction for ptr, instruction in enumerate(program_list)})

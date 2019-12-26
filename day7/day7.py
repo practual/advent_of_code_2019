@@ -14,7 +14,8 @@ def main():
         current_input = 0
         for phase in phases:
             program = list_to_program(orig_program)
-            _, current_input = run_program(program, [current_input, phase], True)
+            context = {'inputs': [current_input, phase]}
+            _, current_input = run_program(program, context, True)
         max_output = max(max_output, current_input)
     print('PART 1 MAX OUTPUT', max_output)
 
@@ -27,17 +28,18 @@ def main():
             for phase in phases:
                 inputs = [current_input]
                 try:
-                    program, ptr = amp_states[current_amp]
+                    program, context = amp_states[current_amp]
                 except IndexError:
                     program = list_to_program(orig_program)
-                    ptr = 0
-                    amp_states.append((program, ptr))
+                    context = {'ptr': 0}
+                    amp_states.append((program, context))
                     inputs.append(phase)
+                context['inputs'] = inputs
                 try:
-                    ptr, current_input = run_program(program, inputs, True, True, ptr)
+                    context, current_input = run_program(program, context, True, True)
                 except StopIteration:
                     break
-                amp_states[current_amp] = (program, ptr)
+                amp_states[current_amp] = (program, context)
                 current_amp += 1
                 current_amp %= 5
             else:
