@@ -58,12 +58,18 @@ def main():
 
     ore_without_excess = get_chemical(reaction_map, 'FUEL', 1, True)
 
-    ore_available = 1000000000000
-    fuel = int(ore_available // ore_needed_per_fuel)
     excess_ore_per_cycle = ore_needed_per_fuel - ore_without_excess
-    scaling = 1 / (1 - excess_ore_per_cycle / ore_needed_per_fuel)
-    available_fuel = math.floor(fuel * scaling)
-    print('FUEL AVAILABLE WITH A TRILLION ORE:', available_fuel)
+    ore_available = 1000000000000
+    fuel = 0
+    while ore_available:
+        extra_fuel = ore_available // ore_needed_per_fuel
+        if not extra_fuel:
+            break
+        fuel += extra_fuel
+        used_ore = extra_fuel * ore_needed_per_fuel
+        ore_available = ore_available - used_ore + extra_fuel * excess_ore_per_cycle
+
+    print('FUEL AVAILABLE WITH A TRILLION ORE:', fuel)
 
 
 if __name__ == '__main__':
